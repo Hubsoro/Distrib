@@ -1,0 +1,157 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+class MyType {
+private:
+    std::vector<int> digits;
+
+public:
+    MyType() {
+        digits.push_back(0);
+    }
+
+    MyType(const std::string& hexString) {
+        for (int i = hexString.size() - 1; i >= 0; i--) {
+            char c = hexString[i];
+            if (isxdigit(c)) {
+                int value = isdigit(c) ? c - '0' : toupper(c) - 'A' + 10;
+                digits.push_back(value);
+            }
+            else {
+                throw std::invalid_argument("Invalid hex string");
+            }
+        }
+    }
+
+    // Метод для перетворення MyType в шістнадцятковий рядок
+    std::string getHex() const {
+        std::string hexString;
+        for (int i = digits.size() - 1; i >= 0; i--) {
+            hexString += "0123456789ABCDEF"[digits[i]];
+        }
+        return hexString;
+    }
+
+    // Додавання
+    MyType operator+(const MyType& other) const {
+        MyType result;
+        int carry = 0;
+        int len = std::max(digits.size(), other.digits.size());
+
+        for (int i = 0; i < len || carry; i++) {
+            int a = (i < digits.size()) ? digits[i] : 0;
+            int b = (i < other.digits.size()) ? other.digits[i] : 0;
+            int sum = a + b + carry;
+            carry = sum / 16;
+            result.digits.push_back(sum % 16);
+        }
+
+        return result;
+    }
+
+    
+
+    // Множення
+    MyType operator*(const MyType& other) const {
+        MyType result;
+        result.digits.assign(digits.size() + other.digits.size(), 0);
+
+        for (int i = 0; i < digits.size(); i++) {
+            int carry = 0;
+            for (int j = 0; j < other.digits.size() || carry; j++) {
+                long long cur = result.digits[i + j] +
+                    (long long)digits[i] * (j < other.digits.size() ? other.digits[j] : 0) + carry;
+                result.digits[i + j] = cur % 16;
+                carry = cur / 16;
+            }
+        }
+
+        while (result.digits.size() > 1 && result.digits.back() == 0) {
+            result.digits.pop_back();
+        }
+
+        return result;
+    }
+
+    
+    // Побітова операція І
+    MyType bitwiseAND(const MyType& other) const {
+        MyType result;
+        int len = std::max(digits.size(), other.digits.size());
+        result.digits.resize(len, 0);
+
+        for (int i = 0; i < len; i++) {
+            int a = (i < digits.size()) ? digits[i] : 0;
+            int b = (i < other.digits.size()) ? other.digits[i] : 0;
+            result.digits[i] = a & b;
+        }
+
+        return result;
+    }
+
+    // Побітова операція АБО
+    MyType bitwiseOR(const MyType& other) const {
+        MyType result;
+        int len = std::max(digits.size(), other.digits.size());
+        result.digits.resize(len, 0);
+
+        for (int i = 0; i < len; i++) {
+            int a = (i < digits.size()) ? digits[i] : 0;
+            int b = (i < other.digits.size()) ? other.digits[i] : 0;
+            result.digits[i] = a | b;
+        }
+
+        return result;
+    }
+
+    // Побітова операція НЕ
+    MyType bitwiseNOT() const {
+        MyType result(*this);
+        for (int& digit : result.digits) {
+            digit = ~digit;
+        }
+        return result;
+    }
+
+    // Порівняння
+    bool operator<(const MyType& other) const {
+        if (digits.size() != other.digits.size()) {
+            return digits.size() < other.digits.size();
+        }
+
+        for (int i = digits.size() - 1; i >= 0; i--) {
+            if (digits[i] != other.digits[i]) {
+                return digits[i] < other.digits[i];
+            }
+        }
+
+        return false; // Рівні числа
+    }
+
+    bool operator==(const MyType& other) const {
+        return digits == other.digits;
+    }
+
+    // Оператор <= для порівняння
+    bool operator<=(const MyType& other) const {
+        return *this < other || *this == other;
+    }
+};
+
+int main() {
+    // Приклад використання
+    MyType num1("1A");
+    MyType num2("F0");
+
+    std::cout << "MyType 1: " << num1.getHex() << std::endl;
+    std::cout << "MyType 2: " << num2.getHex() << std::endl;
+
+    MyType resultAdd = num1 + num2;
+    std::cout << "Додавання: " << resultAdd.getHex() << std::endl;
+
+    MyType resultMul = num1 * num2;
+    std::cout << "Множення: " << resultMul.getHex() << std::endl;
+
+    return 0;
+}
